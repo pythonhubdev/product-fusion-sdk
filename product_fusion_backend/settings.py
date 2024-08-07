@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     environment: str = "DEV"
     log_level: LogLevel = LogLevel.INFO
     opentelemetry_endpoint: Optional[str] = None
-    database_url: str = "async+postgresql://postgres:password@localhost/product_fusion"
+    database_url: str = "postgresql+asyncpg://postgres:password@localhost/product_fusion"
 
     model_config = SettingsConfigDict(
         env_file=".env",

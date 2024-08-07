@@ -7,6 +7,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from product_fusion_backend.models import meta
+from product_fusion_backend.settings import settings
 
 config = context.config
 
@@ -14,6 +15,8 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = meta
+
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 
 def run_migrations_offline() -> None:

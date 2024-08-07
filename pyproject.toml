@@ -25,6 +25,8 @@ loguru = "^0.7.2"
 granian = "^1.5.2"
 alembic = "^1.13.2"
 sqlalchemy = "^2.0.32"
+asyncpg = "^0.29.0"
+greenlet = "^3.0.3"
 
 
 [tool.poetry.group.development.dependencies]
