@@ -1,0 +1,18 @@
+services:
+    api:
+        environment:
+            OPEN_TELEMETRY_ENDPOINT: "http://otel-collector:4317"
+
+    collector:
+        image: otel/opentelemetry-collector-contrib:0.53.0
+        volumes:
+        -   ./deploy/otel-collector-config.yml:/config.yml
+        command: --config config.yml
+        ports:
+        -   "4317:4317"
+
+    jaeger:
+        image: jaegertracing/all-in-one:1.35
+        hostname: jaeger
+        ports:
+        -   16686:16686

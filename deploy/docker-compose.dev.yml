@@ -1,0 +1,10 @@
+services:
+    api:
+        ports:
+        -   "8000:8000"
+        build:
+            target: dev
+        volumes:
+        -   .:/app/src/
+        environment:
+            RELOAD: "True"

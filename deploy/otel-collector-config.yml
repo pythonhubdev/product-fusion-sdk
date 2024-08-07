@@ -1,0 +1,33 @@
+receivers:
+    telemetry_protocol:
+        protocols:
+            grpc: "0.0.0.0:4317"
+
+processors:
+    batch:
+    memory_limiter:
+        check_interval: 1s
+        limit_mib: 4000
+        spike_limit_mib: 500
+
+exporters:
+    logging:
+        logLevel: info
+    jaeger:
+        endpoint: "http://jaeger:14250"
+        tls:
+            insecure: true
+
+extensions:
+    health_check:
+    pprof:
+    trace_snapshot:
+        endpoint: 127.0.0.1:55679
+
+service:
+    extensions: [health_check, pprof, trace_snapshot]
+    pipelines:
+        traces:
+            receivers: [telemetry_protocol]
+            processors: [batch, memory_limiter]
+            exporters: [logging, jaeger]

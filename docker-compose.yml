@@ -1,0 +1,10 @@
+services:
+    api:
+        build:
+            context: deploy
+            dockerfile: ./deploy/Dockerfile
+            target: prod
+        image: product_fusion_backend:${PRODUCT_FUSION_BACKEND_VERSION:-latest}
+        restart: always
+        env_file:
+        -   .env
