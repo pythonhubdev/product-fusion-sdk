@@ -46,13 +46,12 @@ def inject_session(func: F) -> F:
     @wraps(func)
     async def wrapper(*args: Any, **kwargs: Any) -> Any:
         async for session in database.get_db():
+            if "session" in kwargs:
+                raise ValueError("Session argument already provided")
             kwargs["session"] = session
             return await func(*args, **kwargs)
 
     return cast(F, wrapper)
 
 
-__all__ = [
-    "database",
-    "inject_session",
-]
+__all__ = ["database", "inject_session"]

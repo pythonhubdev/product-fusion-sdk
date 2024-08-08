@@ -28,5 +28,5 @@ class HypercornApplication:
         """
         config = HypercornConfig()
         logger.info("Configuring Hypercorn Server...")
-        logger.info(f"Starting Hypercorn Server on http://{config.bind[0]}")
+        logger.info(f"Starting Hypercorn Server on http://{config.bind[0]}")  # noqa
         asyncio.run(serve(self.app, config))  # type: ignore
