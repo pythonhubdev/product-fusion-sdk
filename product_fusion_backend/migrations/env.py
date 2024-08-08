@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from product_fusion_backend.models import meta
+from product_fusion_backend.models import BaseModel
 from product_fusion_backend.settings import settings
 
 config = context.config
@@ -14,7 +14,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = meta
+target_metadata = BaseModel.metadata
 
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
