@@ -10,7 +10,7 @@ from product_fusion_backend.dao import MemberDAO, OrganizationDAO, RoleDAO, User
 from product_fusion_backend.web.api.member.schema import InviteMemberSchema
 
 
-class OrganizationMemberService:
+class OrganizationMemberController:
     @staticmethod
     async def invite_member(data: InviteMemberSchema, inviter_id: int) -> APIResponse:
         inviter_member = await MemberDAO().get_by_user_and_org(inviter_id, data.organization_id)  # type: ignore
@@ -111,7 +111,7 @@ class OrganizationMemberService:
 
         user = await UserDAO().get(member.user_id)  # type: ignore
         _password = ""
-        if user:
+        if user and not user.settings.get("email_verified", False):
             user.settings = user.settings or {}
             user.settings["email_verification"] = {
                 "token": verification_token,
@@ -133,11 +133,17 @@ class OrganizationMemberService:
                 VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE.format(verification_link, _password),
             )
 
-        return APIResponse(
-            status_=StatusEnum.SUCCESS,
-            message="Invite accepted successfully! Please verify your email and set a password",
-            status_code=status.HTTP_200_OK,
-        )
+            return APIResponse(
+                status_=StatusEnum.SUCCESS,
+                message="Invite accepted successfully! Please verify your email and set a password",
+                status_code=status.HTTP_200_OK,
+            )
+        else:
+            return APIResponse(
+                status_=StatusEnum.SUCCESS,
+                message="Invite accepted successfully",
+                status_code=status.HTTP_200_OK,
+            )
 
     @staticmethod
     async def delete_member(member_id: int, org_id: int, deleter_id: int) -> APIResponse:
