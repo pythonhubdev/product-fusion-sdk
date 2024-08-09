@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 24 * 60
     jwt_algorithm: str = "HS256"
     refresh_token_expire_days: int = 30
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    smtp_username: str
+    smtp_password: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -19,3 +19,12 @@ class UserDAO(BaseDAO[UserModel]):
         )
         result = await session.execute(statement)
         return result.scalars().first()
+
+    @inject_session
+    async def get_by_reset_token(self, token: str, session: AsyncSession) -> Optional[UserModel]:
+        token = token.strip()
+        statement = select(self.model).where(
+            (self.model.settings["reset_token"].op("->>")("token") == token),
+        )
+        result = await session.execute(statement)
+        return result.scalars().first()

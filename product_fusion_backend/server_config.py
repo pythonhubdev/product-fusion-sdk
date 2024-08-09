@@ -9,3 +9,4 @@ class HypercornConfig(Config):
     use_reloader = settings.reload
     accesslog = None
     errorlog = None
+    loglevel = "CRITICAL" if settings.reload else "DEBUG"

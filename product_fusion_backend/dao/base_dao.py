@@ -29,7 +29,7 @@ class BaseDAO(Generic[T]):
     @inject_session
     async def get(self, unique_id: int, session: AsyncSession) -> Optional[T]:
         try:
-            statement = select(self.model).where(self.model.id == unique_id)  # type: ignore
+            statement = select(self.model).where(self.model.id == int(unique_id))  # type: ignore
             result = await session.execute(statement)
             return result.scalars().first()
         except SQLAlchemyError as exception:

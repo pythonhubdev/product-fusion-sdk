@@ -17,3 +17,7 @@ class SignupSchema(BaseAuthSchema):
     organization_status: int = 0
     organization_personal: bool = False
     organization_settings: dict[str, Any] = {}
+
+
+class ResetPasswordSchema(BaseModel):
+    password: str
