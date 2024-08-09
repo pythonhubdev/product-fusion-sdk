@@ -15,8 +15,8 @@ async def signup(request: SignupSchema) -> APIResponse:
 
 
 @auth_router.post("/login")
-async def login(request: LoginSchema) -> APIResponse:
-    return await AuthController.login(request)
+async def login(body: Request, request: LoginSchema) -> APIResponse:
+    return await AuthController.login(request, body)
 
 
 @auth_router.post("/refresh")
@@ -36,3 +36,8 @@ async def reset_password(
     token: str = Query(..., description="Reset token from email"),
 ) -> APIResponse:
     return await AuthController.reset_password(token, reset_data.password)
+
+
+@auth_router.get("/verify-email")
+async def verify_email(token: str = Query(...)) -> APIResponse:
+    return await AuthController.verify_email(token)

@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, Boolean, Integer, String
+from sqlalchemy import JSON, Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from product_fusion_backend.models.base import Base, BaseModel
