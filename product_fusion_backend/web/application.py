@@ -7,8 +7,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
 from product_fusion_backend.core import DEFAULT_ROUTE_OPTIONS, CommonResponseSchema, StatusEnum, configure_logging
-from product_fusion_backend.middlewares import LoggingMiddleware
+from product_fusion_backend.middlewares import JWTAuthMiddleware, LoggingMiddleware
 from product_fusion_backend.web.api.router import api_router
+from product_fusion_backend.web.lifetime import lifespan
 
 APP_ROOT = Path(__file__).parent.parent
 
@@ -28,6 +29,7 @@ def get_app() -> FastAPI:
         redoc_url=None,
         openapi_url="/api/openapi.json",
         default_response_class=ORJSONResponse,
+        lifespan=lifespan,
     )
 
     app.add_middleware(
@@ -38,6 +40,7 @@ def get_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(LoggingMiddleware)  # type: ignore
+    app.add_middleware(JWTAuthMiddleware)  # type: ignore
 
     app.include_router(router=api_router, prefix="/api")
 

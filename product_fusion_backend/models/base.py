@@ -1,18 +1,18 @@
 from datetime import datetime
-from typing import Any
 
-from sqlalchemy import JSON, DateTime, MetaData
-from sqlalchemy.orm import DeclarativeBase, registry
-
-meta = MetaData()
+from sqlalchemy import DateTime, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
 class BaseModel(DeclarativeBase):
-    metadata = meta
+    pass
 
-    registry = registry(
-        type_annotation_map={
-            datetime: DateTime(timezone=True),
-            dict[str, Any]: JSON,
-        },
-    )
+
+class Base:
+    @declared_attr  # type: ignore
+    def __tablename__(cls) -> str:  # type: ignore # noqa
+        return cls.__name__.lower()  # type: ignore
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now())

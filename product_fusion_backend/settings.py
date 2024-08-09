@@ -31,7 +31,15 @@ class Settings(BaseSettings):
     environment: str = "DEV"
     log_level: LogLevel = LogLevel.INFO
     opentelemetry_endpoint: Optional[str] = None
-    database_url: str = "async+postgresql://postgres:password@localhost/product_fusion"
+    database_url: str = "postgresql+asyncpg://postgres:password@localhost/product_fusion"
+    secret_key: str
+    access_token_expire_minutes: int = 24 * 60
+    jwt_algorithm: str = "HS256"
+    refresh_token_expire_days: int = 30
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 465
+    smtp_username: str
+    smtp_password: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -41,7 +49,7 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def _settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore
 
 
 settings: Settings = _settings()

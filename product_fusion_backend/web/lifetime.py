@@ -3,8 +3,8 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI
 
+from product_fusion_backend.connections import database
 from product_fusion_backend.core import OpenTelemetry
-from product_fusion_backend.database import database
 from product_fusion_backend.models.base import BaseModel
 
 
