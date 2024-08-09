@@ -2,9 +2,18 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from authlib.jose import jwt
+from fastapi import Request
 from starlette import status
 
-from product_fusion_backend.core import EMAIL_TEMPLATE, APIResponse, StatusEnum, email_service
+from product_fusion_backend.core import (
+    LOGIN_ALERT_MAIL_TEMPLATE,
+    PASSWORD_RESET_MAIL_TEMPLATE,
+    PASSWORD_UPDATE_MAIL_TEMPLATE,
+    VERIFY_EMAIL_TEMPLATE,
+    APIResponse,
+    StatusEnum,
+    email_service,
+)
 from product_fusion_backend.core.utils.hash_utils import hash_manager
 from product_fusion_backend.dao import MemberDAO, OrganizationDAO, RoleDAO, UserDAO
 from product_fusion_backend.settings import settings
@@ -29,9 +38,17 @@ class AuthController:
                 )
 
             hashed_password = hash_manager.hash_password(request.password)
+            verification_token = secrets.token_urlsafe(32)
+            expires_at = datetime.now(UTC) + timedelta(hours=24)
             user_data = {
                 "email": request.email,
                 "password": hashed_password,
+                "settings": {
+                    "email_verification": {
+                        "token": verification_token,
+                        "expires_at": expires_at.timestamp(),
+                    },
+                },
             }
             new_user = await user_dao.create(user_data)  # type: ignore
 
@@ -52,6 +69,7 @@ class AuthController:
                     {
                         "name": "owner",
                         "org_id": org.id,
+                        "description": "Owner of the organization",
                     },
                 )
 
@@ -60,14 +78,26 @@ class AuthController:
                     "user_id": new_user.id,
                     "org_id": org.id,
                     "role_id": owner_role.id,
+                    "status": 1,
                 },
             )
 
             access_token = AuthController.create_access_token(new_user.id)
             refresh_token = AuthController.create_refresh_token(new_user.id)
+
+            await user_dao.update(new_user.id, {"settings": new_user.settings})  # type: ignore
+
+            verification_link = f"http://0.0.0.0:8000/api/auth/verify-email?token={verification_token}"
+
+            await email_service.send_email(
+                request.email,
+                "Welcome - Verify Your Email",
+                VERIFY_EMAIL_TEMPLATE.format(request.email, verification_link, verification_link),
+            )
+
             return APIResponse(
                 status_=StatusEnum.SUCCESS,
-                message="User registered successfully",
+                message="User registered successfully! Please verify your email to continue.",
                 data={
                     "access_token": access_token.decode(),
                     "refresh_token": refresh_token.decode(),
@@ -84,7 +114,7 @@ class AuthController:
             )
 
     @staticmethod
-    async def login(request: LoginSchema) -> APIResponse:
+    async def login(request: LoginSchema, metadata: Request) -> APIResponse:
         try:
             user = await user_dao.get_by_email(request.email)  # type: ignore
             if not user or not hash_manager.verify_password(request.password, user.password):
@@ -95,6 +125,20 @@ class AuthController:
                 )
             access_token = AuthController.create_access_token(user.id)
             refresh_token = AuthController.create_refresh_token(user.id)
+
+            ip_address = metadata.client.host or "Unknown"  # type: ignore
+            user_agent = metadata.headers.get("User-Agent", "Unknown")
+
+            await email_service.send_email(
+                user.email,
+                "New Login Detected",
+                LOGIN_ALERT_MAIL_TEMPLATE.format(
+                    user.email,
+                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                    ip_address,
+                    user_agent,
+                ),
+            )
             return APIResponse(
                 status_=StatusEnum.SUCCESS,
                 message="Login successful",
@@ -200,7 +244,7 @@ class AuthController:
         email_sent = await email_service.send_email(
             user.email,
             "Password Reset Request",
-            EMAIL_TEMPLATE.format(reset_link),
+            PASSWORD_RESET_MAIL_TEMPLATE.format(reset_link),
         )
 
         if not email_sent:
@@ -238,6 +282,12 @@ class AuthController:
         user.password = hashed_password
         user.settings.pop("reset_token", None)
 
+        await email_service.send_email(
+            user.email,
+            "Password Updated",
+            PASSWORD_UPDATE_MAIL_TEMPLATE.format(user.email),
+        )
+
         await user_dao.update(  # type: ignore
             user.id,
             {
@@ -251,3 +301,39 @@ class AuthController:
             message="Password reset successfully",
             status_code=status.HTTP_200_OK,
         )
+
+    @staticmethod
+    async def verify_email(token: str) -> APIResponse:
+        try:
+            user = await user_dao.get_by_verification_token(token)  # type: ignore
+            if not user:
+                return APIResponse(
+                    status_=StatusEnum.ERROR,
+                    message="Invalid or expired verification token",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            token_data = user.settings.get("email_verification", {})
+            if datetime.now(UTC).timestamp() > token_data.get("expires_at", 0):
+                return APIResponse(
+                    status_=StatusEnum.ERROR,
+                    message="Verification token has expired",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user.settings["email_verified"] = True
+            user.settings.pop("email_verification", None)
+            await user_dao.update(user.id, {"settings": user.settings, "status": 1})  # type: ignore
+
+            return APIResponse(
+                status_=StatusEnum.SUCCESS,
+                message="Email verified successfully",
+                status_code=status.HTTP_200_OK,
+            )
+
+        except Exception as exception:
+            return APIResponse(
+                status_=StatusEnum.ERROR,
+                message=f"An error occurred: {str(exception)}",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

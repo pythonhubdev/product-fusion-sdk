@@ -24,7 +24,15 @@ class UserDAO(BaseDAO[UserModel]):
     async def get_by_reset_token(self, token: str, session: AsyncSession) -> Optional[UserModel]:
         token = token.strip()
         statement = select(self.model).where(
-            (self.model.settings["reset_token"].op("->>")("token") == token),
+            (self.model.settings["reset_token"].op("->>")("token") == token),  # noqa
+        )
+        result = await session.execute(statement)
+        return result.scalars().first()
+
+    @inject_session
+    async def get_by_verification_token(self, token: str, session: AsyncSession) -> Optional[UserModel]:
+        statement = select(self.model).where(
+            self.model.settings["email_verification"].op("->>")("token") == token,  # noqa
         )
         result = await session.execute(statement)
         return result.scalars().first()
