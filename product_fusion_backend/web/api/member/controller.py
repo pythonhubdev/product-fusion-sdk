@@ -4,7 +4,12 @@ from datetime import UTC, datetime, timedelta
 from fastapi.encoders import jsonable_encoder
 from starlette import status
 
-from product_fusion_backend.core import VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE, APIResponse, StatusEnum, email_service
+from product_fusion_backend.core import (
+    VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE,
+    APIResponse,
+    StatusEnum,
+    redis_service,
+)
 from product_fusion_backend.core.utils.hash_utils import hash_manager
 from product_fusion_backend.dao import MemberDAO, OrganizationDAO, RoleDAO, UserDAO
 from product_fusion_backend.web.api.member.schema import InviteMemberSchema
@@ -68,10 +73,13 @@ class OrganizationMemberController:
         )
 
         invite_link = f"http://0.0.0.0:8000/api/org/member/accept-invite?token={invite_token}"
-        await email_service.send_email(
+
+        await redis_service.insert(
             data.email,
-            "Invitation to join organization",
-            f"You've been invited to join an organization. Click here to accept: {invite_link}",
+            {
+                "subject": "Invitation to join organization",
+                "message": f"You've been invited to join an organization. Click here to accept: {invite_link}",
+            },
         )
 
         return APIResponse(
@@ -127,10 +135,12 @@ class OrganizationMemberController:
             )
             verification_link = f"http://0.0.0.0:8000/api/auth/verify-email?token={verification_token}"
 
-            await email_service.send_email(
+            await redis_service.insert(
                 user.email,
-                "Verify Your Email and Set Password",
-                VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE.format(verification_link, _password),
+                {
+                    "subject": "Verify Your Email and Set Password",
+                    "message": VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE.format(verification_link, _password),
+                },
             )
 
             return APIResponse(

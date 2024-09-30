@@ -75,6 +75,8 @@ VERIFY_EMAIL_WITH_PASS_RESET_TEMPLATE = """
 
 SKIP_URLS = [
     "/api/health",
+    "/static/docs/swagger-ui.css",
+    "/static/docs/swagger-ui-bundle.js",
     "/api/openapi.json",
     "/api/docs",
     "/api/redoc",

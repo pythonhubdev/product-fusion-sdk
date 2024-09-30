@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from hypercorn.asyncio import serve
 from loguru import logger
 
-from product_fusion_backend.core import configure_logging
+from product_fusion_backend.core import redis_service
 from product_fusion_backend.server_config import HypercornConfig
 
 
@@ -20,7 +20,6 @@ class HypercornApplication:
         app: FastAPI,
     ) -> None:
         self.app = app
-        configure_logging()
 
     def run(self) -> None:
         """

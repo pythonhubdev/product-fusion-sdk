@@ -12,7 +12,7 @@ from product_fusion_backend.core import (
     VERIFY_EMAIL_TEMPLATE,
     APIResponse,
     StatusEnum,
-    email_service,
+    redis_service,
 )
 from product_fusion_backend.core.utils.hash_utils import hash_manager
 from product_fusion_backend.dao import MemberDAO, OrganizationDAO, RoleDAO, UserDAO
@@ -89,11 +89,21 @@ class AuthController:
 
             verification_link = f"http://0.0.0.0:8000/api/auth/verify-email?token={verification_token}"
 
-            await email_service.send_email(
+            data =  {
+                    "email": request.email,
+                    "subject": "Welcome - Verify Your Email",
+                    "body": VERIFY_EMAIL_TEMPLATE.format(
+                        request.email,
+                        verification_link,
+                        verification_link,
+                    ),
+                }
+            await redis_service.insert(
                 request.email,
-                "Welcome - Verify Your Email",
-                VERIFY_EMAIL_TEMPLATE.format(request.email, verification_link, verification_link),
+                data,
+                queue=True,
             )
+
 
             return APIResponse(
                 status_=StatusEnum.SUCCESS,
@@ -129,16 +139,21 @@ class AuthController:
             ip_address = metadata.client.host or "Unknown"  # type: ignore
             user_agent = metadata.headers.get("User-Agent", "Unknown")
 
-            await email_service.send_email(
+            await redis_service.insert(
                 user.email,
-                "New Login Detected",
-                LOGIN_ALERT_MAIL_TEMPLATE.format(
-                    user.email,
-                    datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
-                    ip_address,
-                    user_agent,
-                ),
+                data={
+                    "email": user.email,
+                    "subject": "New Login Detected",
+                    "body": LOGIN_ALERT_MAIL_TEMPLATE.format(
+                        user.email,
+                        datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S"),
+                        ip_address,
+                        user_agent,
+                    ),
+                },
+                queue=True,
             )
+
             return APIResponse(
                 status_=StatusEnum.SUCCESS,
                 message="Login successful",
@@ -241,18 +256,17 @@ class AuthController:
 
         reset_link = f"http://0.0.0.0:8000/api/auth/reset-password?token={reset_token}"
 
-        email_sent = await email_service.send_email(
+
+        await redis_service.insert(
             user.email,
-            "Password Reset Request",
-            PASSWORD_RESET_MAIL_TEMPLATE.format(reset_link),
+            {
+                "email": user.email,
+                "subject": "Password Reset Request",
+                "body": PASSWORD_RESET_MAIL_TEMPLATE.format(reset_link),
+            },
+            queue=True,
         )
 
-        if not email_sent:
-            return APIResponse(
-                status_=StatusEnum.ERROR,
-                message="Failed to send reset email",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
         return APIResponse(
             status_=StatusEnum.SUCCESS,
@@ -282,10 +296,16 @@ class AuthController:
         user.password = hashed_password
         user.settings.pop("reset_token", None)
 
-        await email_service.send_email(
+
+
+        await redis_service.insert(
             user.email,
-            "Password Updated",
-            PASSWORD_UPDATE_MAIL_TEMPLATE.format(user.email),
+            {
+                "email": user.email,
+                "subject": "Password Updated",
+                "body": PASSWORD_UPDATE_MAIL_TEMPLATE.format(user.email),
+            },
+            queue=True,
         )
 
         await user_dao.update(  # type: ignore

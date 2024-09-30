@@ -1,5 +1,6 @@
 from product_fusion_backend.core.schema.common_response_schema import APIResponse, CommonResponseSchema
 from product_fusion_backend.core.services.email_service import email_service
+from product_fusion_backend.core.services.redis_service import redis_service
 from product_fusion_backend.core.utils.constants import (
     DEFAULT_ROUTE_OPTIONS,
     INVITE_MEMBER_MAIL_TEMPLATE,
@@ -34,6 +35,7 @@ __all__ = [
     "HashManager",
     # Services
     "email_service",
+    "redis_service",
     # Templates
     "PASSWORD_RESET_MAIL_TEMPLATE",
     "INVITE_MEMBER_MAIL_TEMPLATE",

@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     workers_count: int = 1
     reload: bool = False
     environment: str = "DEV"
-    log_level: LogLevel = LogLevel.INFO
+    log_level: LogLevel = LogLevel.DEBUG
     opentelemetry_endpoint: Optional[str] = None
     database_url: str = "postgresql+asyncpg://postgres:password@localhost/product_fusion"
     secret_key: str
